@@ -26,8 +26,6 @@ namespace EcbForex.API.Clients
             _client.BaseUrl = options.Value.EcbBaseUrl;
         }
 
-        
-
         public async Task<List<RateModel>> GetHistoricalRates(RatesReportRequest reportRequest)
         {
             var tasks = new List<Task<IRestResponse<EcbRatesResponse>>>();
@@ -49,16 +47,17 @@ namespace EcbForex.API.Clients
             switch (response.StatusCode)
             {
                 case HttpStatusCode.OK:
-                    _logger.Log(LogLevel.Debug,$"Response: {response.StatusCode}, {response.Content}");
                     return new RateModel
                     {
                         Date = response.Request.Resource.ToDateTime(),
                         Rate = response.Data.Rates.First().Value
                     };
                 case HttpStatusCode.BadRequest:
+                    _logger.Log(LogLevel.Debug,$"Response: {response.StatusCode}, {response.Content}");
                     var errorResponse = JsonConvert.DeserializeObject<EcbErrorResponse>(response.Content) ?? new EcbErrorResponse();
                     throw new BadRequestException(errorResponse.Error);
                 default:
+                    _logger.Log(LogLevel.Error,$"Response: {response.StatusCode}, {response.Content}");
                     var error = JsonConvert.DeserializeObject<EcbErrorResponse>(response.Content) ?? new EcbErrorResponse();
                     throw new Exception(error.Error);
             }
